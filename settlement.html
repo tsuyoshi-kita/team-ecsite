@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+
+<link href="/css/reset.css" th:href="@{/css/reset.css}" rel="stylesheet" />
+<link href="/css/style.css" th:href="@{/css/style.css}" rel="stylesheet" />
+
+<title>JUNOUS</title>
+</head>
+<body>
+
+<header th:insert="fragments/page_header::pageHeader"></header>
+
+<main>
+
+	<div class="container cart">
+		<div>
+			<h2 th:if="${userDestinations !=null && userDestinations.size() > 0}">宛先を選択し、決済を完了します。</h2>
+			<p class="info" th:if="${userDestinations !=null && userDestinations.size() > 0}">宛先の新規登録、削除も可能です。</p>
+			<p class="info" th:if="${userDestinations ==null || userDestinations.size() == 0}">宛先情報がありません。新規登録してください。</p>
+		</div>
+		
+		<table class="destination" th:if="${userDestinations !=null && userDestinations.size() > 0}">
+			<tr>
+				<th>選択</th><th>宛先氏名</th><th>住所</th><th>電話番号</th>
+			</tr>
+			<tr th:each="destination, st: ${userDestinations}">
+				<td>
+				 <input type="radio" th:value="${destination.id}" name="id" th:checked="${st.index==0}" class="radio">
+				</td>
+				<td>
+				<span th:text="${destination.familyName}"></span><span> </span><span th:text="${destination.firstName}"></span>
+				</td>
+				<td th:text="${destination.address}" />
+				<td th:text="${destination.telNumber}" />
+			</tr>
+		</table>
+		
+		<div class="buttonArea">
+			<button id="deleteBtn" th:if="${userDestinations !=null && userDestinations.size() > 0}">削除</button>
+			<form name="destinationForm" action="/leo/destination/">
+				<button type="submit">新規宛先</button>
+			</form>
+			<button id="settlementBtn" th:if="${userDestinations !=null && userDestinations.size() > 0}">決済</button>
+		</div>
+	</div>
+
+</main>
+
+<script>
+/**
+* deleteBtn, settlementBtn押下時radioがcheckされているか
+* @param destinationId
+*/
+$(() =>{
+	$('#deleteBtn').on('click', () => {
+		let checked = $('.radio:checked');
+		let destinationId = $(checked).val();
+		deleteDestination(destinationId, checked);
+	});
+	
+	$('#settlementBtn').on('click', () => {
+		let checked = $('.radio:checked');
+		let destinationId = $(checked).val();
+		settlement(destinationId);
+	});
+});
+
+/**
+* deleteBtn押下でradioの特定の宛先を削除
+* @param destinationId
+*/
+function deleteDestination(destinationId, checked) {
+	$.ajax({
+		type: 'POST',
+		url: '/leo/destination/delete',
+		data: JSON.stringify({'destinationId': destinationId}),
+		contentType: 'application/json',
+	})
+	.then((result) => {
+		$(checked).parent().parent().remove();
+		let radioList=$('.radio');
+		if(radioList.length == 0) {
+			location.replace('/leo/settlement/');
+		}
+		radioList[0].checked = true;
+	}, () => {
+		alert('Error: ajax connection failed.');
+	});
+}
+
+</script>
+
+</body>
+</html>
